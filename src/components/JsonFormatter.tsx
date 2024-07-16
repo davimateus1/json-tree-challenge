@@ -1,25 +1,20 @@
+import "@/styles/scrollbar.css";
+
 import { useState } from "react";
 import { JSONValue } from "@/types";
+import { JsonFormatterProps } from "@/interfaces";
 
 import {
+  MIN_DEPTH,
   FIXED_INDEX,
-  FULL_PERCENT,
   START_INDEX,
+  FULL_PERCENT,
   MAX_PERCENT_TO_LOAD,
-} from "./contants";
+} from "@/utils";
 
-interface FormatterOptions {
-  useColors?: boolean;
-  virtualize?: boolean;
-}
-
-interface JSONFormatterProps {
-  json: JSONValue;
-  options: FormatterOptions;
-}
-
-export const JSONFormatter = ({ json, options }: JSONFormatterProps) => {
+export const JsonFormatter = ({ json, options }: JsonFormatterProps) => {
   const { useColors = true, virtualize = false } = options;
+
   const [endIndex, setEndIndex] = useState(
     virtualize ? FIXED_INDEX : Object.keys(json).length
   );
@@ -71,7 +66,7 @@ export const JSONFormatter = ({ json, options }: JSONFormatterProps) => {
       className="h-[70vh] overflow-y-auto w-[70vw]"
       onScroll={virtualize ? handleScroll : undefined}
     >
-      {formatObject(json, 1)}
+      {formatObject(json, MIN_DEPTH)}
     </div>
   );
 };
