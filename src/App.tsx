@@ -1,9 +1,8 @@
 import { JSONValue } from "@/types";
-import { jsonFormatter } from "@/utils";
-import { ChangeEvent, useState } from "react";
+import { EMPTY_PERCENT, FULL_PERCENT, JSONFormatter } from "./utils";
 
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { ChangeEvent, useState } from "react";
+import { Input, Button, Progress } from "@/components/ui";
 
 interface DataState {
   title: string;
@@ -11,41 +10,65 @@ interface DataState {
 }
 
 export const App = () => {
-  const [data, setData] = useState<DataState>({} as DataState);
+  const [error, setError] = useState("");
+  const [progress, setProgress] = useState(EMPTY_PERCENT);
+  const [{ json, title }, setData] = useState<DataState>({} as DataState);
 
   const handleSetJson = (e: ChangeEvent<HTMLInputElement>) => {
+    setError("");
+
     const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
 
-    reader.onload = (e) => {
-      const result = e.target?.result;
-      if (!result) return;
+    reader.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const percentLoaded = Math.round((event.loaded / event.total) * 100);
+        setProgress(percentLoaded);
+      }
+    };
 
-      setData({ title: file.name, json: JSON.parse(result.toString()) });
+    reader.onload = (e) => {
+      try {
+        const result = e.target?.result;
+        if (!result) return;
+
+        setData({
+          title: file.name,
+          json: JSON.parse(String(result)),
+        });
+        setProgress(FULL_PERCENT);
+      } catch {
+        setError("Invalid JSON file");
+      }
     };
 
     reader.readAsText(file);
   };
 
   const clearData = () => {
+    setError("");
     setData({} as DataState);
+    setProgress(EMPTY_PERCENT);
   };
 
   return (
-    <div className="w-full min-h-svh bg-black flex justify-center items-center flex-col p-10 space-y-8">
-      {data.json ? (
+    <div className="w-full min-h-svh max-h-svh bg-black flex items-center flex-col p-20 space-y-8 overflow-hidden">
+      {json ? (
         <div className="flex justify-center flex-col items-center space-y-4">
           <Button onClick={clearData} className="bg-red-500 text-white">
             Clear Data
           </Button>
           <div>
             <h1 className="text-3xl font-bold text-center text-white">
-              {data.title}
+              {title}
             </h1>
             <div className="flex justify-center items-center">
-              {jsonFormatter(data.json)}
+              <JSONFormatter
+                json={json}
+                options={{ useColors: true, virtualize: true }}
+              />
             </div>
           </div>
         </div>
@@ -66,6 +89,17 @@ export const App = () => {
             className="w-2/4"
             onChange={handleSetJson}
           />
+          {error && <p className="text-red-500 text-center text-xl">{error}</p>}
+          {progress > EMPTY_PERCENT && !json && !error && (
+            <div className="w-full flex justify-center flex-col items-center">
+              <Progress value={progress} className="w-2/4" />
+              {progress === FULL_PERCENT ? (
+                <span className="text-green-500">Done!</span>
+              ) : (
+                <span className="text-white">{progress}% Uploaded</span>
+              )}
+            </div>
+          )}
         </>
       )}
     </div>
