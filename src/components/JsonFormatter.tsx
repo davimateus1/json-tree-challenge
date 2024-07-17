@@ -13,15 +13,16 @@ import {
 } from "@/utils";
 
 export const JsonFormatter = ({ json, options }: JsonFormatterProps) => {
+  const keysLength = Object.keys(json).length;
   const { useColors = true, virtualize = false } = options;
 
   const [endIndex, setEndIndex] = useState(
-    virtualize ? FIXED_INDEX : Object.keys(json).length
+    virtualize ? FIXED_INDEX : keysLength
   );
 
   const formatObject = (obj: JSONValue, depth: number): JSX.Element => {
-    const entries = Object.entries(obj);
     const isArray = Array.isArray(obj);
+    const entries = Object.entries(obj);
 
     return (
       <div>
@@ -30,7 +31,7 @@ export const JsonFormatter = ({ json, options }: JsonFormatterProps) => {
           <div key={key} className={`ml-4 border-l pl-2 depth-${depth % 5}`}>
             <span className={useColors ? "text-green-500" : ""}>{key}: </span>
             {typeof value === "object" && value !== null ? (
-              formatObject(value, depth + 1)
+              formatObject(value, depth++)
             ) : (
               <span className={useColors ? "text-yellow-500" : ""}>
                 {JSON.stringify(value)}
@@ -55,7 +56,7 @@ export const JsonFormatter = ({ json, options }: JsonFormatterProps) => {
     const total = target.scrollHeight - target.clientHeight;
     const percent = (scroll / total) * FULL_PERCENT;
 
-    if (percent > MAX_PERCENT_TO_LOAD) {
+    if (percent > MAX_PERCENT_TO_LOAD && endIndex < keysLength) {
       const newEndIndex = endIndex + FIXED_INDEX;
       setEndIndex(newEndIndex);
     }
